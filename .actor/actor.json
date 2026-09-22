@@ -3,10 +3,10 @@
   "name": "upwork-clone-pro",
   "title": "Upwork Scraper PRO - Client Spend, Rating & AI Lead Scoring",
   "description": "Upwork Scraper PRO - Clone of blackfalcondata scraper with AI Lead Scoring, 49 filters, incremental mode & proxy bypass for Cloudflare.",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "meta": {
     "templateId": "upwork-clone-pro-v1",
-    "versionNum": "0.0.18"
+    "versionNum": "0.0.19"
   },
   "input": "./input_schema.json",
   "dockerfile": "../Dockerfile",
