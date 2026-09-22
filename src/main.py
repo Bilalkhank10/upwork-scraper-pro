@@ -23,6 +23,9 @@ import logging
 from typing import Dict, Any, List, Set
 from datetime import datetime, timezone
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
+log = logging.getLogger("upwork-pro")
+
 # Apify SDK
 try:
     from apify import Actor
@@ -30,7 +33,11 @@ try:
     log.info("Apify SDK imported successfully")
 except Exception as e:
     HAS_APIFY = False
-    log.warning(f"Apify SDK import failed: {e} - using local fallback")
+    # Fallback for local run - use print if log not ready
+    try:
+        log.warning(f"Apify SDK import failed: {e} - using local fallback")
+    except:
+        print(f"Apify SDK import failed: {e}")
     # Fallback for local run
     class Actor:
         @staticmethod
@@ -54,8 +61,7 @@ from .incremental import IncrementalStore
 from .notifier import Notifier
 from .utils import parse_search_url, calculate_ai_scores, compute_content_hash, now_iso
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
-log = logging.getLogger("upwork-pro")
+
 
 # For standalone testing without Apify
 MOCK_INPUT = {
