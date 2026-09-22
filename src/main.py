@@ -222,7 +222,7 @@ async def main():
         inputs = {}
     
     # If no input (local run), use mock - but on Apify use defaults from schema
-    is_on_apify = HAS_APIFY and getattr(Actor, 'is_at_home', lambda: False)()
+    is_on_apify = os.getenv("APIFY_IS_AT_HOME") == "1" or HAS_APIFY
     if not inputs or (not inputs.get("query") and not inputs.get("searchUrl") and not inputs.get("startUrls")):
         if is_on_apify:
             # On Apify, empty input means user clicked Start with defaults - use defaults
@@ -264,12 +264,21 @@ async def main():
         log.info("Auto-enabled Apify Proxy (required for Upwork)")
     if HAS_APIFY and proxy_cfg.get("useApifyProxy"):
         try:
-            proxy_info = await Actor.create_proxy_configuration(actor_proxy_input=proxy_cfg)
+            # Apify SDK v2: create_proxy_configuration() - groups define proxy type
+            # For Upwork need RESIDENTIAL to bypass Cloudflare
+            groups = proxy_cfg.get("apifyProxyGroups") or ["RESIDENTIAL"]
+            try:
+                proxy_info = await Actor.create_proxy_configuration(groups=groups)
+            except TypeError:
+                # Fallback for older SDK signature
+                proxy_info = await Actor.create_proxy_configuration(proxy_config={"groups": groups, "useApifyProxy": True})
             if proxy_info:
                 proxy_url = proxy_info.new_url()
-                log.info("Using Apify Proxy")
+                log.info(f"Using Apify Proxy (groups={groups}) -> {proxy_url[:30]}...")
+            else:
+                log.warning("Proxy config returned None - check Apify Proxy is enabled in Console")
         except Exception as e:
-            log.warning(f"Proxy setup failed: {e}")
+            log.warning(f"Proxy setup failed: {e}", exc_info=True)
 
     # Init API
     session_token = inputs.get("sessionToken")
@@ -346,13 +355,13 @@ async def main():
                 break
         except Exception as e:
             log.error(f"Search task failed: {e}", exc_info=True)
-            await Actor.set_status_message(f"Search failed: {e}", is_terminal=False)
+            log.error(f"Search failed: {e}")
 
     log.info(f"Raw collected: {len(all_jobs)} jobs")
     if len(all_jobs) == 0:
         # 401 means auth failed - likely proxy or endpoint issue (Upwork changed route 2026-09-01)
         log.warning("0 jobs - Likely Upwork auth/Cloudflare block. Check: 1) Proxy ON? 2) Upwork changed GraphQL route (see changelog 0.6.81). Trying HTML fallback...")
-        await Actor.set_status_message("0 jobs: Upwork blocked request (401). Ensure Apify Proxy ON and check Upwork API route. Fallback to HTML if needed.", is_terminal=False)
+        log.warning("0 jobs: Upwork blocked request (401). Ensure Apify Proxy ON and check Upwork API route.")
 
     # Re-sort by publishTime descending (newest first) - fixes Upwork's approximate recency
     try:
@@ -386,10 +395,8 @@ async def main():
             all_jobs = await api.fetch_details_batch(all_jobs, concurrency=int(inputs.get("detailConcurrency",5) or 5))
         except Exception as e:
             log.error(f"Detail enrichment failed: {e}")
-            await Actor.set_status_message(f"Detail enrichment error: {e}", is_terminal=False)
     elif inputs.get("enrichDetails") and not session_token:
         log.warning("enrichDetails=true but no sessionToken - skipping enrichment")
-        await Actor.set_status_message("Enrich skipped: provide sessionToken (oauth2v2_int_...)", is_terminal=False)
 
     # --- DESCRIPTION FORMAT ---
     desc_fmt = inputs.get("descriptionFormat", "all")
@@ -420,7 +427,7 @@ async def main():
         log.info(f"After incremental filter: {len(all_jobs)} -> {len(filtered)} | Stats: {stats}")
         all_jobs = filtered
         await inc_store.save()
-        await Actor.set_status_message(f"Incremental: NEW={stats.get('NEW',0)} UPDATED={stats.get('UPDATED',0)} UNCHANGED={stats.get('UNCHANGED',0)}", is_terminal=False)
+        log.info(f"Incremental: NEW={stats.get('NEW',0)} UPDATED={stats.get('UPDATED',0)} UNCHANGED={stats.get('UNCHANGED',0)}")
     else:
         # No incremental - set changeType to NEW for consistency
         for j in all_jobs:
@@ -458,7 +465,7 @@ async def main():
         else:
             log.info("No jobs to push - empty run")
             if inc_store:
-                await Actor.set_status_message("Incremental run: no new/changed jobs (empty is normal)", is_terminal=False)
+                log.info("Incremental run: no new/changed jobs (empty is normal)")
 
         # Store summary in KV for debugging
         try:
