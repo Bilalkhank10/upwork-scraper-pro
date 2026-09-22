@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.env.local
+storage/
+output/
+dataset/
+.apify/
+node_modules/
+.DS_Store
+*.log
+my_token.txt
+token.txt

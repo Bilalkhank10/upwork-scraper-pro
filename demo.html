@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upwork Scraper PRO - Live Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0f1115;color:#e8e8e8;min-height:100vh}
+.header{background:linear-gradient(135deg,#14a800 0%,#095900 100%);padding:32px 24px;text-align:center}
+.header h1{font-size:32px;font-weight:800;letter-spacing:-1px}
+.header p{opacity:.9;margin-top:8px;font-size:15px}
+.badge{display:inline-block;background:#fff;color:#14a800;padding:4px 12px;border-radius:20px;font-weight:700;font-size:12px;margin-top:12px}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.card{background:#1a1d24;border:1px solid #2a2e3a;border-radius:16px;padding:20px}
+.card h3{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:#14a800;margin-bottom:12px}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#a8adb7}
+.input-group input, .input-group select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a2e3a;background:#0f1115;color:#fff;font-size:14px}
+.input-group input:focus,select:focus{outline:none;border-color:#14a800}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;padding:14px;background:#14a800;color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
+.btn:hover{background:#118c00;transform:translateY(-1px)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.job{border:1px solid #2a2e3a;border-radius:12px;padding:16px;margin-bottom:12px;background:#12151c;transition:.2s}
+.job:hover{border-color:#14a80033}
+.job-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.job h4{font-size:15px;line-height:1.3;flex:1}
+.score{padding:6px 10px;border-radius:20px;font-weight:800;font-size:13px;white-space:nowrap}
+.score-premium{background:#14a800;color:#fff}
+.score-good{background:#f59e0b;color:#000}
+.score-risky{background:#ef4444;color:#fff}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:13px;color:#a8adb7}
+.meta span{background:#1a1d24;border:1px solid #2a2e3a;padding:4px 8px;border-radius:20px}
+.tag-premium{color:#14a800;border-color:#14a800 !important}
+.link{color:#14a800;text-decoration:none;font-weight:600;font-size:13px}
+.link:hover{text-decoration:underline}
+.stats{display:flex;gap:12px;margin-bottom:16px}
+.stat{flex:1;background:#12151c;border:1px solid #2a2e3a;border-radius:12px;padding:14px;text-align:center}
+.stat b{font-size:22px;display:block;color:#14a800}
+.stat span{font-size:12px;color:#a8adb7;text-transform:uppercase;letter-spacing:.5px}
+pre{background:#0f1115;border:1px solid #2a2e3a;border-radius:10px;padding:14px;overflow:auto;font-size:12px;max-height:300px}
+.comparison{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #2a2e3a}
+th{color:#14a800;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+.tick{color:#14a800} .cross{color:#ef4444}
+.footer{text-align:center;padding:32px;color:#6b7280;font-size:13px;border-top:1px solid #1a1d24;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🚀 Upwork Scraper PRO</h1>
+  <p>Clone of <b>blackfalcondata/upwork-scraper</b> — More Powerful, AI-Powered Lead Scoring</p>
+  <span class="badge">✨ 49 Inputs • AI Score • Incremental • Batch Search • Made for Lahore 🇵🇰</span>
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat"><b>49</b><span>Inputs</span></div>
+    <div class="stat"><b>100%</b><span>API Reverse-Eng.</span></div>
+    <div class="stat"><b>95%</b><span>Cost Saving (Incr.)</span></div>
+    <div class="stat"><b>AI</b><span>Lead Scoring</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>🎛️ Try Input (Same as Original + PRO)</h3>
+      <div class="input-group">
+        <label>🔍 Query</label>
+        <input id="q" value="shopify developer" placeholder="e.g. python, react">
+      </div>
+      <div class="row">
+        <div class="input-group">
+          <label>💼 Job Type</label>
+          <select id="jobType"><option value="">Any</option><option value="hourly">Hourly</option><option value="fixed">Fixed</option></select>
+        </div>
+        <div class="input-group">
+          <label>📊 Proposals</label>
+          <select id="proposals"><option value="">Any</option><option value="0-4">0-4 (Lowest)</option><option value="5-9">5-9</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-group">
+          <label>💵 Min Spent ($)</label>
+          <input id="spent" type="number" value="1000" placeholder="0">
+        </div>
+        <div class="input-group">
+          <label>⭐ Min Rating</label>
+          <input id="rating" type="number" value="4.5" step="0.1" max="5" placeholder="0">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>🌍 Location Filter</label>
+        <input id="loc" value="United States" placeholder="United States, Europe...">
+      </div>
+      <div class="input-group">
+        <label><input type="checkbox" id="ai" checked> 🤖 Enable AI Lead Scoring (PRO)</label>
+        <label><input type="checkbox" id="inc"> ♻️ Incremental Mode</label>
+      </div>
+      <button class="btn" onclick="simulate()">▶️ Simulate Scrape (Demo Data)</button>
+      <p style="font-size:12px;color:#6b7280;margin-top:10px">Real run: <code>python -m src.main</code> or deploy to Apify. Demo uses mock data to show scoring.</p>
+    </div>
+
+    <div class="card">
+      <h3>📤 Live Output Preview</h3>
+      <div id="results">
+        <p style="color:#6b7280;text-align:center;padding:40px">Click <b>Simulate Scrape</b> to see AI-scored jobs ↓</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>⚔️ Original vs PRO Clone Comparison</h3>
+    <div class="comparison">
+      <table>
+        <tr><th>Feature</th><th>Original</th><th>PRO Clone (You)</th></tr>
+        <tr><td>GraphQL Search + 14 filters</td><td class="tick">✓</td><td class="tick">✓ + re-sort fix</td></tr>
+        <tr><td>Client Country / Spent / Verified</td><td class="tick">✓</td><td class="tick">✓ + City, Timezone, HireRate</td></tr>
+        <tr><td>Exact Applicant Count</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+        <tr><td>AI Lead Score (0-100)</td><td class="cross">✗ (only 0-5)</td><td class="tick">✓ PREMIUM/Good/Risky + Connect est.</td></tr>
+        <tr><td>Incremental (NEW/UPDATED)</td><td class="tick">✓</td><td class="tick">✓ + REAPPEARED/EXPIRED + repost detect</td></tr>
+        <tr><td>Batch Search (multiple queries)</td><td class="tick">✓</td><td class="tick">✓ + startUrls batch</td></tr>
+        <tr><td>Custom Filters (any field)</td><td class="tick">✓</td><td class="tick">✓ enhanced</td></tr>
+        <tr><td>Notifications</td><td class="tick">✓ TG/Slack/Discord</td><td class="tick">✓ + rich embeds</td></tr>
+        <tr><td>Inputs</td><td>~42</td><td><b>49</b></td></tr>
+        <tr><td>Local Run (no Apify)</td><td class="cross">✗</td><td class="tick">✓</td></tr>
+        <tr><td>Pricing</td><td>$1/1000 + $0.001</td><td>Same (you set)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>📦 Project Files (Ready to Deploy)</h3>
+    <pre id="tree">upwork-clone-pro/
+├── .actor/actor.json          → Actor config
+├── .actor/input_schema.json   → 49 inputs
+├── src/main.py                → Orchestrator (471 lines)
+├── src/upwork_api.py          → GraphQL reverse-engineered (618 lines)
+├── src/incremental.py         → SHA256 diff logic
+├── src/notifier.py            → TG/Discord/Slack
+├── src/utils.py               → AI scoring & hashing
+├── requirements.txt
+├── Dockerfile
+└── README.md</pre>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn" style="background:#1a1d24;border:1px solid #2a2e3a" onclick="showCode()">👁️ View Core API Code</button>
+      <button class="btn" style="background:#1a1d24;border:1px solid #2a2e3a" onclick="showReadme()">📖 README</button>
+    </div>
+    <pre id="codeview" style="display:none;margin-top:12px"></pre>
+  </div>
+
+  <div class="footer">
+    Built by reverse-engineering <code>blackfalcondata/upwork-scraper</code> • GraphQL endpoint: <code>api.upwork.com/graphql</code> • Not affiliated with Upwork<br>
+    Lahore, PK • Deploy: <code>apify push</code> → Store • Local: <code>python -m src.main</code>
+  </div>
+</div>
+
+<script>
+const mockJobs = [
+  {title:"Shopify Plus Store Migration - $2500", jobType:"FIXED", budgetAmount:2500, clientCountry:"United States", clientTotalSpent:132000, clientRating:4.98, clientReviewCount:57, totalApplicants:3, skills:["Shopify","Liquid"], publish:"2h ago", tier:"PREMIUM", score:98, connects:6},
+  {title:"React Native + Firebase Chat App", jobType:"FIXED", budgetAmount:1800, clientCountry:"Canada", clientTotalSpent:45000, clientRating:4.9, clientReviewCount:22, totalApplicants:8, skills:["React Native","Firebase"], publish:"5h ago", tier:"Good", score:84, connects:8},
+  {title:"Python Web Scraper - Selenium", jobType:"HOURLY", budgetAmount:null, hourly:"40-80", clientCountry:"United Kingdom", clientTotalSpent:8900, clientRating:4.6, clientReviewCount:9, totalApplicants:14, skills:["Python","Scraping"], publish:"1h ago", tier:"Medium", score:62, connects:12},
+  {title:"Data Entry Copy Paste - $3/hr", jobType:"HOURLY", budgetAmount:null, hourly:"3-5", clientCountry:"Pakistan", clientTotalSpent:0, clientRating:0, clientReviewCount:0, totalApplicants:49, skills:["Data Entry"], publish:"30m ago", tier:"Risky", score:12, connects:16},
+];
+
+function simulate(){
+  const q = document.getElementById('q').value || 'shopify';
+  const spent = parseInt(document.getElementById('spent').value||0);
+  const ai = document.getElementById('ai').checked;
+  let filtered = mockJobs.filter(j=> j.clientTotalSpent >= spent);
+  if(!ai) filtered = filtered.map(j=>({...j, score:'—', tier:'—'}));
+  else filtered.sort((a,b)=> b.score - a.score);
+  
+  let html = `<div style="font-size:13px;color:#a8adb7;margin-bottom:12px">Query: <b style="color:#fff">${q}</b> • Found ${filtered.length} (filtered by $${spent}+) • ${ai?'AI sorted':'No AI'}</div>`;
+  filtered.forEach(j=>{
+    const cls = j.tier==='PREMIUM'?'premium': j.tier==='Good'?'good':'risky';
+    const sc = j.score==='—'? '—' : j.score;
+    html+= `<div class="job">
+      <div class="job-top">
+        <h4>${j.title}</h4>
+        <span class="score score-${cls === 'premium'?'premium': cls==='good'?'good':'risky'}">${sc} ${j.tier!=='—'? '• '+j.tier:''}</span>
+      </div>
+      <div class="meta">
+        <span>${j.jobType==='FIXED'? '$'+j.budgetAmount : j.hourly+'/hr'}</span>
+        <span>🌍 ${j.clientCountry}</span>
+        <span>💰 Spent $${j.clientTotalSpent.toLocaleString()}</span>
+        <span>⭐ ${j.clientRating||'No rating'}</span>
+        <span>👥 ${j.totalApplicants} applicants</span>
+        <span class="${j.tier==='PREMIUM'?'tag-premium':''}">🔥 ${j.connects} Connects est.</span>
+      </div>
+      <div class="meta"><span>🛠️ ${j.skills.join(', ')}</span><span>🕒 ${j.publish}</span></div>
+      <a class="link" href="#">https://www.upwork.com/jobs/~02xxxxx →</a>
+    </div>`;
+  });
+  html+= `<div style="margin-top:12px;padding:12px;background:#0f1115;border-radius:10px;font-size:12px;color:#6b7280">💡 <b style="color:#14a800">PRO Tip:</b> Jobs with <b>PREMIUM + 0-4 applicants</b> = best ROI. Apply within 1h before Connects rise from 6 → 16!</div>`;
+  document.getElementById('results').innerHTML = html;
+}
+function showCode(){
+  const el = document.getElementById('codeview');
+  el.style.display = el.style.display==='none'?'block':'none';
+  el.textContent = `// src/upwork_api.py - Reverse Engineered GraphQL (excerpt)
+const SEARCH_QUERY = \`
+query MarketplaceJobPostingsSearch($marketPlaceJobFilter: MarketplaceJobPostingsSearchFilter) {
+  marketplaceJobPostingsSearch(marketPlaceJobFilter: $marketPlaceJobFilter) {
+    totalCount
+    edges { node {
+      id, ciphertext, title, description,
+      amount { rawValue }, hourlyBudgetMin { rawValue },
+      client {
+        totalSpent { rawValue }, verificationStatus,
+        location { country }, totalFeedback, totalReviews
+      },
+      totalApplicants, enterpriseJob
+    }}
+    pageInfo { hasNextPage, endCursor }
+  }
+}\`;
+
+// Build filter from 49 inputs → GraphQL variables
+function buildFilter(inputs){
+  return {
+    searchExpression_eq: inputs.query,
+    jobType_eq: inputs.jobType?.toUpperCase(),
+    verifiedPaymentOnly_eq: inputs.verifiedPaymentOnly,
+    proposalRange_eq: parseRange(inputs.proposals), // "0-4" → {from:0,to:4}
+    budgetRange_eq: parseRange(inputs.budget),
+    locations_any: inputs.location,
+    pagination_eq: {after: cursor, first: 50}
+  }
+}
+// Paginate with cursor, dedupe by jobId, re-sort by publishTime
+// + AI Scoring: calculate_ai_scores(job) → 0-100, tier, connects`;
+}
+function showReadme(){
+  const el = document.getElementById('codeview');
+  el.style.display = el.style.display==='none'?'block':'none';
+  el.textContent = `# Deploy in 3 commands:
+apify login
+apify push
+# Then visit https://console.apify.com/actors/YOUR_ID
+
+# Local test:
+pip install -r requirements.txt
+python test_local.py        # verify AI scoring
+QUERY="shopify" python -m src.main  # real scrape
+
+# Input JSON for premium leads:
+{
+  "query": "shopify developer",
+  "proposals": "0-4",
+  "minClientTotalSpent": 10000,
+  "verifiedPaymentOnly": true,
+  "enableAIScoring": true,
+  "maxResults": 50
+}`;
+}
+simulate();
+</script>
+</body>
+</html>

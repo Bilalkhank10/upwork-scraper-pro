@@ -1,0 +1,17 @@
+{
+  "actorSpecification": 1,
+  "name": "upwork-clone-pro",
+  "title": "Upwork Scraper PRO - Client Spend, Rating & AI Lead Scoring",
+  "description": "Powerful clone of blackfalcondata/upwork-scraper - even more powerful. Scrapes Upwork via reverse-engineered GraphQL API with full client intelligence, exact applicant count, 2-stage detail enrichment, incremental mode, AI lead scoring, and multi-channel notifications. No login required. Built for Lahore/PK freelancers targeting premium US/EU clients.",
+  "meta": {
+    "templateId": "upwork-clone-pro-v1",
+    "versionNum": "1.0.0"
+  },
+  "input": "./.actor/input_schema.json",
+  "dockerfile": "./Dockerfile",
+  "defaultRunOptions": {
+    "build": "latest",
+    "memoryMbytes": 4096,
+    "timeoutSecs": 3600
+  }
+}
