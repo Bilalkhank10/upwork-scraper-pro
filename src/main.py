@@ -27,8 +27,10 @@ from datetime import datetime, timezone
 try:
     from apify import Actor
     HAS_APIFY = True
-except ImportError:
+    log.info("Apify SDK imported successfully")
+except Exception as e:
     HAS_APIFY = False
+    log.warning(f"Apify SDK import failed: {e} - using local fallback")
     # Fallback for local run
     class Actor:
         @staticmethod
@@ -39,6 +41,9 @@ except ImportError:
         async def get_input(): return {}
         @staticmethod
         async def push_data(data): print(json.dumps(data, indent=2))
+        @staticmethod
+        async def create_proxy_configuration(*args, **kwargs):
+            return None
         @staticmethod
         def log():
             return logging.getLogger()
@@ -218,8 +223,27 @@ async def main():
     # Get input
     try:
         inputs: Dict[str, Any] = await Actor.get_input() or {}
-    except:
+        log.info(f"Actor.get_input returned keys: {list(inputs.keys()) if inputs else 'EMPTY'}")
+    except Exception as e:
+        log.warning(f"Actor.get_input failed: {e}")
         inputs = {}
+    # Fallback: if still empty on Apify, try to read INPUT from KV store file (Apify sets APIFY_DEFAULT_KEY_VALUE_STORE_ID)
+    if not inputs and is_on_apify:
+        try:
+            import os as _os2
+            # Apify stores input in key-value store, but Actor.get_input should have read it
+            # Try alternative: read from env-specified file if exists
+            store_id = _os2.getenv("APIFY_DEFAULT_KEY_VALUE_STORE_ID")
+            token = _os2.getenv("APIFY_TOKEN")
+            if store_id and token:
+                import httpx
+                async with httpx.AsyncClient() as _c:
+                    r = await _c.get(f"https://api.apify.com/v2/key-value-stores/{store_id}/records/INPUT?token={token}")
+                    if r.status_code == 200:
+                        inputs = r.json()
+                        log.info(f"Fallback KV INPUT fetched: {list(inputs.keys()) if isinstance(inputs, dict) else type(inputs)}")
+        except Exception as e:
+            log.warning(f"Fallback INPUT fetch failed: {e}")
     
     # If no input (local run), use mock - but on Apify use defaults from schema
     # Robust Apify detection: check env + Actor config
@@ -270,7 +294,7 @@ async def main():
         proxy_cfg = {"useApifyProxy": True}
         inputs["proxyConfiguration"] = proxy_cfg
         log.info("Auto-enabled Apify Proxy (required for Upwork)")
-    if HAS_APIFY and proxy_cfg.get("useApifyProxy"):
+    if is_on_apify and proxy_cfg.get("useApifyProxy"):
         try:
             # Try requested groups first, fallback to available
             groups = proxy_cfg.get("apifyProxyGroups")
