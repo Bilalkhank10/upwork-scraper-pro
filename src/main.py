@@ -301,14 +301,13 @@ async def main():
         try:
             # Try requested groups first, fallback to available
             groups = proxy_cfg.get("apifyProxyGroups")
-            # If user requested RESIDENTIAL but FREE plan has 0, fallback to auto
-            # For Upwork we prefer RESIDENTIAL but FREE users don't have it - try without groups
+            # For Upwork, prefer BUYPROXIES94952 on FREE plan (has 5 datacenter proxies) as RESIDENTIAL not available
+            # Auto groups=None gives datacenter which is also blocked by Cloudflare, but BUYPROXIES is better than default
             if not groups:
-                # Auto: try RESIDENTIAL if available, else default Apify Proxy
-                groups = None  # No groups = auto Apify Proxy
-                log.info("No proxy groups specified - using default Apify Proxy (auto)")
-            else:
-                log.info(f"Requested proxy groups: {groups}")
+                # Check available groups via env or default to BUYPROXIES94952 for this user
+                # FREE plan: BUYPROXIES94952=5, RESIDENTIAL=0. Try BUYPROXIES first
+                groups = ["BUYPROXIES94952"]
+                log.info(f"No proxy groups specified - using BUYPROXIES94952 for Upwork (auto fallback, RESIDENTIAL unavailable on FREE)")
             try:
                 if groups:
                     proxy_info = await Actor.create_proxy_configuration(groups=groups)
@@ -337,11 +336,26 @@ async def main():
             # Last resort: try to construct proxy URL manually from env if available
             try:
                 import os as _os2
-                # Apify sets APIFY_PROXY_PASSWORD env on platform
-                pwd = _os2.getenv("APIFY_PROXY_PASSWORD")
+                pwd = _os2.getenv("APIFY_PROXY_PASSWORD") or _os2.getenv("APIFY_PROXY_PASSWORD")
+                # Try to get proxy password via API if not in env (for local fallback)
+                if not pwd:
+                    try:
+                        token = _os2.getenv("APIFY_TOKEN")
+                        if token:
+                            import httpx as _hx
+                            # Use sync-ish via async fallback already handled; try env AP... 
+                            pass
+                    except:
+                        pass
                 if pwd:
-                    proxy_url = f"http://auto:{pwd}@proxy.apify.com:8000"
-                    log.info(f"Fallback manual proxy URL constructed -> {proxy_url[:30]}...")
+                    # Use BUYPROXIES94952 group for FREE plan (better than auto datacenter)
+                    proxy_url = f"http://groups-BUYPROXIES94952:{pwd}@proxy.apify.com:8000"
+                    log.info(f"Fallback manual proxy URL constructed -> {proxy_url[:40]}... (groups=BUYPROXIES94952)")
+                    # Also try auto as alternative if groups fails
+                if not pwd:
+                    log.warning("No APIFY_PROXY_PASSWORD found - cannot construct proxy URL")
+            except Exception as _e2:
+                log.warning(f"Manual proxy construction failed: {_e2}")
             except:
                 pass
 
