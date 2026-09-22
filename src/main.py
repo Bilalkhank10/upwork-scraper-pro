@@ -63,6 +63,7 @@ MOCK_INPUT = {
     "compact": False,
     "incrementalMode": False,
     "enableAIScoring": True,
+    "proxyConfiguration": {"useApifyProxy": True},
 }
 
 def apply_post_filters(jobs: List[Dict[str, Any]], inputs: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -220,10 +221,25 @@ async def main():
     except:
         inputs = {}
     
-    # If no input (local run), use mock
-    if not inputs or not inputs.get("query") and not inputs.get("searchUrl") and not inputs.get("startUrls"):
-        log.info("No Apify input detected - using mock input for demo")
-        inputs = MOCK_INPUT.copy()
+    # If no input (local run), use mock - but on Apify use defaults from schema
+    is_on_apify = HAS_APIFY and getattr(Actor, 'is_at_home', lambda: False)()
+    if not inputs or (not inputs.get("query") and not inputs.get("searchUrl") and not inputs.get("startUrls")):
+        if is_on_apify:
+            # On Apify, empty input means user clicked Start with defaults - use defaults
+            log.info("Empty input on Apify - applying schema defaults")
+            inputs = {
+                "query": inputs.get("query") or "shopify developer",
+                "maxResults": inputs.get("maxResults") or 20,
+                "sort": inputs.get("sort") or "recency",
+                "enableAIScoring": inputs.get("enableAIScoring", True),
+                "proxyConfiguration": inputs.get("proxyConfiguration") or {"useApifyProxy": True},
+                **inputs
+            }
+            if not inputs.get("query"):
+                inputs["query"] = "shopify developer"
+        else:
+            log.info("No Apify input detected - using mock input for demo")
+            inputs = MOCK_INPUT.copy()
         # Allow env override
         if os.getenv("QUERY"):
             inputs["query"] = os.getenv("QUERY")
@@ -238,9 +254,14 @@ async def main():
                 inputs[k] = v
         log.info(f"Parsed searchUrl filters: {parsed}")
 
-    # Proxy handling
+    # Proxy handling - CRITICAL for Upwork (Cloudflare bypass)
     proxy_url = None
     proxy_cfg = inputs.get("proxyConfiguration") or {}
+    # Auto-enable Apify Proxy on platform if not explicitly disabled
+    if is_on_apify and not proxy_cfg:
+        proxy_cfg = {"useApifyProxy": True}
+        inputs["proxyConfiguration"] = proxy_cfg
+        log.info("Auto-enabled Apify Proxy (required for Upwork)")
     if HAS_APIFY and proxy_cfg.get("useApifyProxy"):
         try:
             proxy_info = await Actor.create_proxy_configuration(actor_proxy_input=proxy_cfg)
@@ -328,6 +349,10 @@ async def main():
             await Actor.set_status_message(f"Search failed: {e}", is_terminal=False)
 
     log.info(f"Raw collected: {len(all_jobs)} jobs")
+    if len(all_jobs) == 0:
+        # 401 means auth failed - likely proxy or endpoint issue (Upwork changed route 2026-09-01)
+        log.warning("0 jobs - Likely Upwork auth/Cloudflare block. Check: 1) Proxy ON? 2) Upwork changed GraphQL route (see changelog 0.6.81). Trying HTML fallback...")
+        await Actor.set_status_message("0 jobs: Upwork blocked request (401). Ensure Apify Proxy ON and check Upwork API route. Fallback to HTML if needed.", is_terminal=False)
 
     # Re-sort by publishTime descending (newest first) - fixes Upwork's approximate recency
     try:

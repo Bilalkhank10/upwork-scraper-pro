@@ -179,12 +179,20 @@ class UpworkAPI:
     def _headers(self, authenticated=False):
         h = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-            "Accept": "application/json",
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9,ur;q=0.8",
             "Content-Type": "application/json",
             "X-Requested-With": "XMLHttpRequest",
             "Origin": "https://www.upwork.com",
             "Referer": "https://www.upwork.com/nx/search/jobs/",
-            "Accept-Language": "en-US,en;q=0.9",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Ch-Ua": '"Chromium";v="126", "Not-A.Brand";v="24"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
         }
         if authenticated and self.session_token:
             token = self.session_token.strip()
@@ -194,6 +202,7 @@ class UpworkAPI:
         return h
 
     async def get_visitor_token(self):
+        # Note: Upwork's new auth route (2026-09-01) uses same-origin graphql with visitor token from cookies
         """Get anonymous visitor token - required for unauthenticated search"""
         try:
             # Upwork sets visitor token via initial page or via /api/graphql visitor flow
@@ -421,7 +430,9 @@ class UpworkAPI:
                             last_err = f"HTTP {resp.status_code}"
                             continue
                         else:
-                            last_err = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                            last_err = f"HTTP {resp.status_code}: {resp.text[:500]}"
+                            if resp.status_code in (401, 403):
+                                log.warning(f"Auth failed {resp.status_code} - Upwork now requires new route (see 0.6.81 changelog: use route Upwork's own site uses). Proxy: {bool(self.proxy_url)}")
                     except Exception as e:
                         last_err = str(e)
                         log.warning(f"Endpoint {endpoint} failed: {e}")
