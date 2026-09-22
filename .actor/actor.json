@@ -8,8 +8,8 @@
     "templateId": "upwork-clone-pro-v1",
     "versionNum": "1.0.0"
   },
-  "input": "./.actor/input_schema.json",
-  "dockerfile": "./Dockerfile",
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile",
   "defaultRunOptions": {
     "build": "latest",
     "memoryMbytes": 4096,
