@@ -5,110 +5,169 @@
   "schemaVersion": 1,
   "properties": {
     "query": {
-      "title": "🔍 Search Term(s)",
+      "title": "\ud83d\udd0d Search Term(s)",
       "type": "string",
       "description": "Job search keywords. Leave empty to browse all jobs. Supports array string like [\"python\", \"react\"] for batch search.",
       "prefill": "python developer",
       "editor": "textfield"
     },
     "searchUrl": {
-      "title": "🔗 Search URL (Paste Mode)",
+      "title": "\ud83d\udd17 Search URL (Paste Mode)",
       "type": "string",
       "description": "Paste full Upwork search URL https://www.upwork.com/nx/search/jobs/?q=... Filters auto-parsed. Overrides query if provided.",
       "prefill": "",
       "editor": "textfield"
     },
     "startUrls": {
-      "title": "🔗 Multiple Search URLs",
+      "title": "\ud83d\udd17 Multiple Search URLs",
       "type": "array",
       "description": "Multiple Upwork search URLs - each searched separately, results deduped. Powerful for covering multiple niches in one run.",
       "prefill": [],
       "editor": "stringList"
     },
     "jobType": {
-      "title": "💼 Job Type",
+      "title": "\ud83d\udcbc Job Type",
       "type": "string",
       "description": "Filter by payment type",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "hourly", "fixed"],
-      "enumTitles": ["Any", "Hourly", "Fixed Price"]
+      "enum": [
+        "",
+        "hourly",
+        "fixed"
+      ],
+      "enumTitles": [
+        "Any",
+        "Hourly",
+        "Fixed Price"
+      ]
     },
     "experienceLevel": {
-      "title": "🎓 Experience Level",
+      "title": "\ud83c\udf93 Experience Level",
       "type": "string",
       "description": "Filter by required experience",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "EntryLevel", "IntermediateLevel", "ExpertLevel"],
-      "enumTitles": ["Any", "Entry Level", "Intermediate", "Expert"]
+      "enum": [
+        "",
+        "EntryLevel",
+        "IntermediateLevel",
+        "ExpertLevel"
+      ],
+      "enumTitles": [
+        "Any",
+        "Entry Level",
+        "Intermediate",
+        "Expert"
+      ]
     },
     "workload": {
-      "title": "⏳ Workload",
+      "title": "\u23f3 Workload",
       "type": "string",
       "description": "Time commitment",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "as_needed", "part_time", "full_time"],
-      "enumTitles": ["Any", "As Needed (<10h)", "Part Time (10-30h)", "Full Time (30h+)"]
+      "enum": [
+        "",
+        "as_needed",
+        "part_time",
+        "full_time"
+      ],
+      "enumTitles": [
+        "Any",
+        "As Needed (<10h)",
+        "Part Time (10-30h)",
+        "Full Time (30h+)"
+      ]
     },
     "sort": {
-      "title": "🔀 Sort Order",
+      "title": "\ud83d\udd00 Sort Order",
       "type": "string",
       "description": "How to sort results",
       "prefill": "recency",
       "editor": "select",
-      "enum": ["recency", "relevance", "newest", "oldest"],
+      "enum": [
+        "recency",
+        "relevance",
+        "newest",
+        "oldest"
+      ],
       "default": "recency"
     },
     "category": {
-      "title": "📁 Category",
+      "title": "\ud83d\udcc1 Category",
       "type": "array",
       "description": "Upwork category name (e.g. Web Development) or array of them",
       "prefill": [],
       "editor": "stringList"
     },
     "location": {
-      "title": "🌍 Client Location (include)",
+      "title": "\ud83c\udf0d Client Location (include)",
       "type": "array",
       "description": "Countries, regions, or ISO codes. Accepts: United States, US, europe, north_america",
       "prefill": [],
       "editor": "stringList"
     },
     "excludeLocations": {
-      "title": "🚫 Client Location (exclude)",
+      "title": "\ud83d\udeab Client Location (exclude)",
       "type": "array",
       "description": "Countries/regions to exclude",
       "prefill": [],
       "editor": "stringList"
     },
     "budget": {
-      "title": "💰 Fixed-Price Budget",
+      "title": "\ud83d\udcb0 Fixed-Price Budget",
       "type": "string",
       "description": "Filter fixed-price jobs by amount range",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "0-99", "100-499", "500-999", "1000-4999", "5000-"],
-      "enumTitles": ["Any", "$0-99", "$100-499", "$500-999", "$1000-4999", "$5000+"]
+      "enum": [
+        "",
+        "0-99",
+        "100-499",
+        "500-999",
+        "1000-4999",
+        "5000-"
+      ],
+      "enumTitles": [
+        "Any",
+        "$0-99",
+        "$100-499",
+        "$500-999",
+        "$1000-4999",
+        "$5000+"
+      ]
     },
     "hourlyRate": {
-      "title": "⏱️ Hourly Rate Range",
+      "title": "\u23f1\ufe0f Hourly Rate Range",
       "type": "string",
       "description": "Filter hourly jobs by rate (USD/hr). Format min-max, open with dash e.g. 50-",
       "prefill": "",
       "editor": "textfield"
     },
     "duration": {
-      "title": "📅 Project Duration",
+      "title": "\ud83d\udcc5 Project Duration",
       "type": "string",
       "description": "Filter by expected length",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "week", "month", "semester", "ongoing"],
-      "enumTitles": ["Any", "< 1 Month", "1-3 Months", "3-6 Months", "Ongoing"]
+      "enum": [
+        "",
+        "week",
+        "month",
+        "semester",
+        "ongoing"
+      ],
+      "enumTitles": [
+        "Any",
+        "< 1 Month",
+        "1-3 Months",
+        "3-6 Months",
+        "Ongoing"
+      ]
     },
     "verifiedPaymentOnly": {
-      "title": "✅ Payment-Verified Only",
+      "title": "\u2705 Payment-Verified Only",
       "type": "boolean",
       "description": "Only verified payment clients",
       "prefill": false,
@@ -116,46 +175,70 @@
       "editor": "checkbox"
     },
     "proposals": {
-      "title": "📊 Proposals Count",
+      "title": "\ud83d\udcca Proposals Count",
       "type": "string",
       "description": "Filter by competition. 0-4 = lowest competition!",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "0-4", "5-9", "10-14", "15-19", "20-49"],
-      "enumTitles": ["Any", "0-4 (Very Low)", "5-9 (Low)", "10-14 (Medium)", "15-19 (High)", "20-49 (Very High)"]
+      "enum": [
+        "",
+        "0-4",
+        "5-9",
+        "10-14",
+        "15-19",
+        "20-49"
+      ],
+      "enumTitles": [
+        "Any",
+        "0-4 (Very Low)",
+        "5-9 (Low)",
+        "10-14 (Medium)",
+        "15-19 (High)",
+        "20-49 (Very High)"
+      ]
     },
     "clientHires": {
-      "title": "📋 Client Hiring History",
+      "title": "\ud83d\udccb Client Hiring History",
       "type": "string",
       "description": "Filter by how many freelancers client hired",
       "prefill": "",
       "editor": "select",
-      "enum": ["", "0", "1-9", "10+"],
-      "enumTitles": ["Any", "No hires", "1-9 hires", "10+ hires"]
+      "enum": [
+        "",
+        "0",
+        "1-9",
+        "10+"
+      ],
+      "enumTitles": [
+        "Any",
+        "No hires",
+        "1-9 hires",
+        "10+ hires"
+      ]
     },
     "contractToHire": {
-      "title": "🤝 Contract-to-Hire Only",
+      "title": "\ud83e\udd1d Contract-to-Hire Only",
       "type": "boolean",
       "description": "May convert to full-time",
       "prefill": false,
       "default": false
     },
     "fromDate": {
-      "title": "📅 From Date",
+      "title": "\ud83d\udcc5 From Date",
       "type": "string",
       "description": "Only jobs published on/after YYYY-MM-DD",
       "prefill": "",
       "editor": "textfield"
     },
     "toDate": {
-      "title": "📅 To Date",
+      "title": "\ud83d\udcc5 To Date",
       "type": "string",
       "description": "Only jobs published on/before YYYY-MM-DD",
       "prefill": "",
       "editor": "textfield"
     },
     "maxAgeMinutes": {
-      "title": "⏰ Max Age (minutes)",
+      "title": "\u23f0 Max Age (minutes)",
       "type": "integer",
       "description": "Only jobs posted within last N minutes. 0 = no limit. Perfect for scheduled runs.",
       "prefill": 0,
@@ -164,7 +247,7 @@
       "editor": "number"
     },
     "minClientTotalSpent": {
-      "title": "💵 Min Client Total Spent (USD)",
+      "title": "\ud83d\udcb5 Min Client Total Spent (USD)",
       "type": "integer",
       "description": "PRO FILTER: Only clients who spent at least this much. e.g. 10000 = $10k+ premium clients only",
       "prefill": 0,
@@ -173,7 +256,7 @@
       "editor": "number"
     },
     "minClientRating": {
-      "title": "⭐ Min Client Rating (0-5)",
+      "title": "\u2b50 Min Client Rating (0-5)",
       "type": "number",
       "description": "PRO FILTER: Minimum client rating",
       "prefill": 0,
@@ -183,7 +266,7 @@
       "editor": "number"
     },
     "minClientReviewCount": {
-      "title": "🗂️ Min Client Review Count",
+      "title": "\ud83d\uddc2\ufe0f Min Client Review Count",
       "type": "integer",
       "description": "PRO FILTER: Minimum reviews",
       "prefill": 0,
@@ -192,28 +275,28 @@
       "editor": "number"
     },
     "includeKeywords": {
-      "title": "📝 Include Keywords (AND/OR)",
+      "title": "\ud83d\udcdd Include Keywords (AND/OR)",
       "type": "object",
       "description": "Require keywords in title/description/skills. {keywords:[\"React\"], matchTitle:true, matchDescription:true, matchSkills:true}",
       "prefill": {},
       "editor": "json"
     },
     "excludeKeywords": {
-      "title": "🚫 Exclude Keywords",
+      "title": "\ud83d\udeab Exclude Keywords",
       "type": "object",
       "description": "Exclude jobs containing keywords. Same shape as includeKeywords",
       "prefill": {},
       "editor": "json"
     },
     "customFilters": {
-      "title": "🔧 Custom Filters (advanced)",
+      "title": "\ud83d\udd27 Custom Filters (advanced)",
       "type": "array",
       "description": "Array of {field, op, value}. op: includes|notIncludes|equals|notEquals|gt|gte|lt|lte. e.g. [{\"field\":\"clientCountry\",\"op\":\"equals\",\"value\":\"United States\"}]",
       "prefill": [],
       "editor": "json"
     },
     "maxResults": {
-      "title": "💯 Max Results",
+      "title": "\ud83d\udcaf Max Results",
       "type": "integer",
       "description": "Maximum total results. 0 = unlimited. Upwork caps ~5050 per query.",
       "prefill": 50,
@@ -223,7 +306,7 @@
       "editor": "number"
     },
     "descriptionMaxLength": {
-      "title": "✂️ Description Max Length",
+      "title": "\u2702\ufe0f Description Max Length",
       "type": "integer",
       "description": "Truncate description to N chars. 0 = full text. Set 2000 to save tokens.",
       "prefill": 0,
@@ -232,7 +315,7 @@
       "editor": "number"
     },
     "compact": {
-      "title": "📦 Compact Output (for AI/MCP)",
+      "title": "\ud83d\udce6 Compact Output (for AI/MCP)",
       "type": "boolean",
       "description": "Core fields only - lightweight for LLMs",
       "prefill": false,
@@ -240,17 +323,27 @@
       "editor": "checkbox"
     },
     "descriptionFormat": {
-      "title": "📄 Description Format",
+      "title": "\ud83d\udcc4 Description Format",
       "type": "string",
       "description": "Which description variants to keep",
       "prefill": "all",
       "default": "all",
       "editor": "select",
-      "enum": ["all", "text", "html", "markdown"],
-      "enumTitles": ["All variants", "Plain Text only", "HTML only", "Markdown only"]
+      "enum": [
+        "all",
+        "text",
+        "html",
+        "markdown"
+      ],
+      "enumTitles": [
+        "All variants",
+        "Plain Text only",
+        "HTML only",
+        "Markdown only"
+      ]
     },
     "excludeEmptyFields": {
-      "title": "🧹 Exclude Empty Fields",
+      "title": "\ud83e\uddf9 Exclude Empty Fields",
       "type": "boolean",
       "description": "Drop null/empty fields for smaller payload",
       "prefill": false,
@@ -258,7 +351,7 @@
       "editor": "checkbox"
     },
     "incrementalMode": {
-      "title": "♻️ Incremental Mode",
+      "title": "\u267b\ufe0f Incremental Mode",
       "type": "boolean",
       "description": "Only output new/changed jobs since last run. Saves 80-95% cost on scheduled runs!",
       "prefill": false,
@@ -266,14 +359,14 @@
       "editor": "checkbox"
     },
     "stateKey": {
-      "title": "🔑 State Key",
+      "title": "\ud83d\udd11 State Key",
       "type": "string",
       "description": "Stable identifier for tracked search. Auto-derived from query if empty.",
       "prefill": "",
       "editor": "textfield"
     },
     "skipReposts": {
-      "title": "🚫 Skip Reposts",
+      "title": "\ud83d\udeab Skip Reposts",
       "type": "boolean",
       "description": "In incremental mode, skip reposts of expired jobs",
       "prefill": false,
@@ -281,7 +374,7 @@
       "editor": "checkbox"
     },
     "emitUnchanged": {
-      "title": "🔄 Emit Unchanged",
+      "title": "\ud83d\udd04 Emit Unchanged",
       "type": "boolean",
       "description": "Also emit unchanged listings in incremental mode",
       "prefill": false,
@@ -289,7 +382,7 @@
       "editor": "checkbox"
     },
     "emitExpired": {
-      "title": "⚰️ Emit Expired",
+      "title": "\u26b0\ufe0f Emit Expired",
       "type": "boolean",
       "description": "Also emit expired listings",
       "prefill": false,
@@ -297,7 +390,7 @@
       "editor": "checkbox"
     },
     "enrichDetails": {
-      "title": "💎 Enrich With Details (requires sessionToken)",
+      "title": "\ud83d\udc8e Enrich With Details (requires sessionToken)",
       "type": "boolean",
       "description": "Fetch authenticated detail page per job to unlock 30+ extra fields. Billed per enriched job if enabled in future.",
       "prefill": false,
@@ -305,7 +398,7 @@
       "editor": "checkbox"
     },
     "sessionToken": {
-      "title": "🔐 Upwork Session Token",
+      "title": "\ud83d\udd10 Upwork Session Token",
       "type": "string",
       "description": "Bearer token from logged-in Upwork session (DevTools > Network > authorization header, value like oauth2v2_int_...). Treat as password!",
       "prefill": "",
@@ -313,7 +406,7 @@
       "isSecret": true
     },
     "detailConcurrency": {
-      "title": "⚙️ Detail Fetch Concurrency",
+      "title": "\u2699\ufe0f Detail Fetch Concurrency",
       "type": "integer",
       "description": "Parallel requests when enriching. 5 conservative, 10-20 faster.",
       "prefill": 5,
@@ -323,7 +416,7 @@
       "editor": "number"
     },
     "enableAIScoring": {
-      "title": "🤖 Enable AI Lead Scoring (PRO - Extra Powerful)",
+      "title": "\ud83e\udd16 Enable AI Lead Scoring (PRO - Extra Powerful)",
       "type": "boolean",
       "description": "NEW: Adds customJobScore, competitionScore, clientTier, estimatedConnects, hireRate. Helps pick best leads instantly without spending Connects.",
       "prefill": true,
@@ -331,15 +424,19 @@
       "editor": "checkbox"
     },
     "proxyConfiguration": {
-      "title": "🌐 Proxy Configuration",
+      "title": "\ud83c\udf10 Proxy Configuration",
       "type": "object",
       "description": "Leave default for best reliability. Uses Apify Proxy.",
-      "prefill": {"useApifyProxy": true},
+      "prefill": {
+        "useApifyProxy": true
+      },
       "editor": "proxy",
-      "default": {"useApifyProxy": true}
+      "default": {
+        "useApifyProxy": true
+      }
     },
     "telegramToken": {
-      "title": "📱 Telegram Bot Token",
+      "title": "\ud83d\udcf1 Telegram Bot Token",
       "type": "string",
       "description": "For instant alerts",
       "prefill": "",
@@ -347,42 +444,42 @@
       "isSecret": true
     },
     "telegramChatId": {
-      "title": "💬 Telegram Chat ID",
+      "title": "\ud83d\udcac Telegram Chat ID",
       "type": "string",
       "description": "Chat or channel ID (starts with -100 for channels)",
       "prefill": "",
       "editor": "textfield"
     },
     "discordWebhookUrl": {
-      "title": "💬 Discord Webhook URL",
+      "title": "\ud83d\udcac Discord Webhook URL",
       "type": "string",
       "description": "Discord webhook for rich embeds",
       "prefill": "",
       "editor": "textfield"
     },
     "slackWebhookUrl": {
-      "title": "💼 Slack Webhook URL",
+      "title": "\ud83d\udcbc Slack Webhook URL",
       "type": "string",
       "description": "Slack incoming webhook",
       "prefill": "",
       "editor": "textfield"
     },
     "webhookUrl": {
-      "title": "🪝 Generic Webhook URL",
+      "title": "\ud83e\ude9d Generic Webhook URL",
       "type": "string",
       "description": "For n8n/Make/Zapier - receives {metadata, items}",
       "prefill": "",
       "editor": "textfield"
     },
     "webhookHeaders": {
-      "title": "🪝 Webhook Headers",
+      "title": "\ud83e\ude9d Webhook Headers",
       "type": "object",
       "description": "Additional headers for webhook",
       "prefill": {},
       "editor": "json"
     },
     "notificationLimit": {
-      "title": "🔢 Notification Limit",
+      "title": "\ud83d\udd22 Notification Limit",
       "type": "integer",
       "description": "Max jobs per notification batch",
       "prefill": 5,
@@ -392,12 +489,20 @@
       "editor": "number"
     },
     "notifyOnlyChanges": {
-      "title": "🔔 Notify Only New/Updated",
+      "title": "\ud83d\udd14 Notify Only New/Updated",
       "type": "boolean",
       "description": "In incremental mode, only notify for NEW/UPDATED",
       "prefill": false,
       "default": false,
       "editor": "checkbox"
+    },
+    "jinaApiKey": {
+      "title": "Jina API Key",
+      "type": "string",
+      "description": "Optional Jina AI Reader API key for Cloudflare bypass via https://r.jina.ai/ + browser engine. Get free at https://jina.ai/reader",
+      "editor": "textfield",
+      "prefill": "",
+      "isSecret": true
     }
   },
   "required": []

@@ -453,6 +453,178 @@ class UpworkAPI:
 
             # dedupe across queries will be done upstream
 
+    async def search_via_jina(self, inputs: Dict[str, Any], max_results: int = 50) -> AsyncGenerator[Dict[str, Any], None]:
+        """Fallback via Jina AI Reader + HTML embedded JSON (when GraphQL 403)
+        Uses https://r.jina.ai/https://www.upwork.com/nx/search/jobs/?q=...
+        Jina bypasses Cloudflare and returns HTML (with X-Return-Format: html)
+        Then we extract __NEXT_DATA__ JSON
+        """
+        query = inputs.get("query") or "shopify developer"
+        if isinstance(query, list):
+            query = query[0]
+        # Build Upwork search URL - encode query properly
+        from urllib.parse import quote_plus
+        q_enc = quote_plus(str(query))
+        search_url = f"https://www.upwork.com/nx/search/jobs/?q={q_enc}&sort=recency"
+        jina_url = f"https://r.jina.ai/{search_url}"
+        html = None
+        import os as _os
+        jina_api_key = _os.getenv("JINA_API_KEY") or inputs.get("jinaApiKey")
+        try:
+            log.info(f"Jina fallback: fetching {jina_url[:100]}... (JINA_API_KEY={'set' if jina_api_key else 'not set'})")
+            headers = {
+                "X-Return-Format": "html",
+                "Accept": "text/html,application/xhtml+xml",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+            }
+            if jina_api_key:
+                headers["Authorization"] = f"Bearer {jina_api_key}"
+                # Use browser engine + Apify proxy to solve Cloudflare
+                if self.proxy_url:
+                    headers["X-Proxy-Url"] = self.proxy_url
+                    headers["X-Engine"] = "browser"
+                    log.info(f"Jina with API key + proxy + browser engine")
+            # Try r.jina.ai
+            async with httpx.AsyncClient(timeout=45, follow_redirects=True, headers=headers) as jina_client:
+                resp = await jina_client.get(jina_url, headers=headers)
+                if resp.status_code == 200 and len(resp.text) > 1000:
+                    # Check if it's challenge page
+                    if "Challenge - Upwork" in resp.text and "ciphertext" not in resp.text:
+                        log.warning(f"Jina returned Cloudflare challenge (len {len(resp.text)}), trying with browser engine if key available")
+                        if jina_api_key and "X-Engine" not in headers:
+                            headers["X-Engine"] = "browser"
+                            if self.proxy_url:
+                                headers["X-Proxy-Url"] = self.proxy_url
+                            resp = await jina_client.get(jina_url, headers=headers)
+                            if resp.status_code == 200:
+                                html = resp.text
+                                log.info(f"Jina browser fetched {len(html)} chars, status {resp.status_code}")
+                            else:
+                                log.warning(f"Jina browser {resp.status_code} preview={resp.text[:500]}")
+                        else:
+                            html = resp.text  # still challenge, but will parse 0
+                            log.warning(f"Jina challenge page - need JINA_API_KEY + browser to bypass")
+                    else:
+                        html = resp.text
+                        log.info(f"Jina fetched {len(html)} chars, status {resp.status_code}")
+                else:
+                    log.warning(f"Jina {resp.status_code} len={len(resp.text)} preview={resp.text[:800]}")
+        except Exception as e:
+            log.warning(f"Jina fetch failed: {e}", exc_info=True)
+        
+        if not html:
+            log.warning("Jina fallback: no HTML fetched")
+            return
+        
+        # Try to extract embedded JSON
+        jobs = self._extract_jobs_from_html(html, inputs)
+        log.info(f"Jina extracted {len(jobs)} jobs from HTML")
+        for node in jobs[:max_results]:
+            yield node
+
+    def _extract_jobs_from_html(self, html: str, inputs: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Parse Upwork HTML for embedded JSON containing jobs"""
+        import json as _json
+        from bs4 import BeautifulSoup
+
+        jobs = []
+        try:
+            soup = BeautifulSoup(html, "html.parser")
+            # Find all script tags with json
+            scripts = soup.find_all("script")
+            candidates = []
+            for s in scripts:
+                txt = s.string or s.get_text() or ""
+                if not txt.strip():
+                    continue
+                # Look for markers
+                if "ciphertext" in txt or "marketplaceJobPostingsSearch" in txt or "__NEXT_DATA__" in txt or "initialData" in txt:
+                    candidates.append(txt)
+                # Also id __NEXT_DATA__
+                if s.get("id") == "__NEXT_DATA__":
+                    candidates.append(txt)
+            
+            # Also try regex for window.__INITIAL_STATE__ = {...}
+            # Find all JSON-like blobs
+            if not candidates:
+                # Regex for JSON in script
+                for m in re.finditer(r'<script[^>]*>(.*?)</script>', html, re.DOTALL):
+                    txt = m.group(1)
+                    if "ciphertext" in txt:
+                        candidates.append(txt)
+
+            log.info(f"Found {len(candidates)} candidate scripts with job hints")
+
+            for txt in candidates:
+                # Try to extract JSON object from txt
+                txt = txt.strip()
+                # Handle window.__INITIAL_STATE__ = {...};
+                if "=" in txt and "{" in txt:
+                    # Extract first { to last }
+                    start = txt.find("{")
+                    end = txt.rfind("}")
+                    if start != -1 and end != -1:
+                        txt = txt[start:end+1]
+                try:
+                    data = _json.loads(txt)
+                except:
+                    # Try to clean: unescape
+                    try:
+                        # Sometimes double-encoded
+                        data = _json.loads(txt.encode().decode('unicode_escape'))
+                    except:
+                        continue
+                
+                # Recursively search for job nodes
+                found = self._walk_find_jobs(data)
+                if found:
+                    log.info(f"Found {len(found)} jobs in one script candidate")
+                    jobs.extend(found)
+            
+            # Dedup by ciphertext
+            seen = set()
+            uniq = []
+            for j in jobs:
+                cid = j.get("ciphertext") or j.get("id")
+                if cid and cid not in seen:
+                    seen.add(cid)
+                    uniq.append(j)
+            return uniq
+        except Exception as e:
+            log.warning(f"HTML parse failed: {e}", exc_info=True)
+            return []
+
+    def _walk_find_jobs(self, obj, depth=0):
+        """Recursively walk JSON to find lists of job-like dicts"""
+        found = []
+        if depth > 8:
+            return found
+        if isinstance(obj, dict):
+            # Check if this dict is a job node (has ciphertext + title)
+            if "ciphertext" in obj and "title" in obj and "description" in obj:
+                return [obj]
+            # Check for edges pattern
+            if "edges" in obj and isinstance(obj["edges"], list):
+                for e in obj["edges"]:
+                    if isinstance(e, dict) and "node" in e:
+                        node = e["node"]
+                        if isinstance(node, dict) and "ciphertext" in node:
+                            found.append(node)
+                    elif isinstance(e, dict) and "ciphertext" in e:
+                        found.append(e)
+                if found:
+                    return found
+            # Check for nodes
+            if "nodes" in obj and isinstance(obj["nodes"], list) and obj["nodes"] and isinstance(obj["nodes"][0], dict) and "ciphertext" in obj["nodes"][0]:
+                return obj["nodes"]
+            # Recurse
+            for v in obj.values():
+                found.extend(self._walk_find_jobs(v, depth+1))
+        elif isinstance(obj, list):
+            for item in obj:
+                found.extend(self._walk_find_jobs(item, depth+1))
+        return found
+
     def transform_node(self, node: Dict[str, Any], inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Transform raw GraphQL node to actor output schema - matches original's field set"""
         from .utils import compute_content_hash, now_iso

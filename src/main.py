@@ -438,9 +438,26 @@ async def main():
 
     log.info(f"Raw collected: {len(all_jobs)} jobs")
     if len(all_jobs) == 0:
-        # 401 means auth failed - likely proxy or endpoint issue (Upwork changed route 2026-09-01)
+        # 401/403 means auth/Cloudflare block - try Jina AI Reader fallback (HTML embedded JSON)
         log.warning("0 jobs - Likely Upwork auth/Cloudflare block. Check: 1) Proxy ON? 2) Upwork changed GraphQL route (see changelog 0.6.81). Trying HTML fallback...")
-        log.warning("0 jobs: Upwork blocked request (401). Ensure Apify Proxy ON and check Upwork API route.")
+        log.warning("0 jobs: Upwork blocked request (401/403). Ensure Apify Proxy ON and check Upwork API route.")
+        # Jina AI Reader fallback - fetches HTML via https://jina.ai/reader/ and parses embedded JSON
+        log.info("Trying Jina AI Reader fallback (https://jina.ai/reader/https://www.upwork.com/...)...")
+        try:
+            jina_count = 0
+            async for node in api.search_via_jina(inputs, max_results=max_results):
+                job = api.transform_node(node, inputs)
+                jid = job.get("jobId")
+                if jid in seen_ids:
+                    continue
+                seen_ids.add(jid)
+                all_jobs.append(job)
+                jina_count += 1
+                if max_results and len(all_jobs) >= max_results:
+                    break
+            log.info(f"Jina fallback done - collected {jina_count} jobs, total {len(all_jobs)}")
+        except Exception as e:
+            log.warning(f"Jina fallback failed: {e}", exc_info=True)
 
     # Re-sort by publishTime descending (newest first) - fixes Upwork's approximate recency
     try:
