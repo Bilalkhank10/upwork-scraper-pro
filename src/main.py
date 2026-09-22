@@ -222,24 +222,32 @@ async def main():
         inputs = {}
     
     # If no input (local run), use mock - but on Apify use defaults from schema
-    is_on_apify = os.getenv("APIFY_IS_AT_HOME") == "1" or HAS_APIFY
-    if not inputs or (not inputs.get("query") and not inputs.get("searchUrl") and not inputs.get("startUrls")):
+    # Robust Apify detection: check env + Actor config
+    is_on_apify = os.getenv("APIFY_IS_AT_HOME") == "1"
+    try:
+        if HAS_APIFY:
+            from apify.config import ApifyConfig as _Cfg
+            is_on_apify = is_on_apify or _Cfg.get_global_config().is_at_home
+    except:
+        pass
+    # Fallback: if HAS_APIFY and token exists, assume on Apify
+    if not is_on_apify and HAS_APIFY and os.getenv("APIFY_TOKEN"):
+        is_on_apify = True
+    log.info(f"ENV check: APIFY_IS_AT_HOME={os.getenv('APIFY_IS_AT_HOME')}, HAS_APIFY={HAS_APIFY}, is_on_apify={is_on_apify}, raw_inputs_keys={list(inputs.keys()) if inputs else 'EMPTY'}")
+    if not inputs:
         if is_on_apify:
-            # On Apify, empty input means user clicked Start with defaults - use defaults
             log.info("Empty input on Apify - applying schema defaults")
-            inputs = {
-                "query": inputs.get("query") or "shopify developer",
-                "maxResults": inputs.get("maxResults") or 20,
-                "sort": inputs.get("sort") or "recency",
-                "enableAIScoring": inputs.get("enableAIScoring", True),
-                "proxyConfiguration": inputs.get("proxyConfiguration") or {"useApifyProxy": True},
-                **inputs
-            }
-            if not inputs.get("query"):
-                inputs["query"] = "shopify developer"
+            inputs = {"query": "shopify developer", "maxResults": 20, "sort": "recency", "enableAIScoring": True, "proxyConfiguration": {"useApifyProxy": True}}
         else:
             log.info("No Apify input detected - using mock input for demo")
             inputs = MOCK_INPUT.copy()
+    # Ensure query exists if inputs has other fields but no query
+    if not inputs.get("query") and not inputs.get("searchUrl") and not inputs.get("startUrls"):
+        log.info(f"Input missing query - setting default 'shopify developer' (had {inputs.get('query')})")
+        inputs["query"] = "shopify developer"
+    if is_on_apify and not inputs.get("proxyConfiguration"):
+        inputs["proxyConfiguration"] = {"useApifyProxy": True}
+        log.info("Auto-added proxyConfiguration for Apify")
         # Allow env override
         if os.getenv("QUERY"):
             inputs["query"] = os.getenv("QUERY")
@@ -264,21 +272,51 @@ async def main():
         log.info("Auto-enabled Apify Proxy (required for Upwork)")
     if HAS_APIFY and proxy_cfg.get("useApifyProxy"):
         try:
-            # Apify SDK v2: create_proxy_configuration() - groups define proxy type
-            # For Upwork need RESIDENTIAL to bypass Cloudflare
-            groups = proxy_cfg.get("apifyProxyGroups") or ["RESIDENTIAL"]
+            # Try requested groups first, fallback to available
+            groups = proxy_cfg.get("apifyProxyGroups")
+            # If user requested RESIDENTIAL but FREE plan has 0, fallback to auto
+            # For Upwork we prefer RESIDENTIAL but FREE users don't have it - try without groups
+            if not groups:
+                # Auto: try RESIDENTIAL if available, else default Apify Proxy
+                groups = None  # No groups = auto Apify Proxy
+                log.info("No proxy groups specified - using default Apify Proxy (auto)")
+            else:
+                log.info(f"Requested proxy groups: {groups}")
             try:
-                proxy_info = await Actor.create_proxy_configuration(groups=groups)
-            except TypeError:
-                # Fallback for older SDK signature
-                proxy_info = await Actor.create_proxy_configuration(proxy_config={"groups": groups, "useApifyProxy": True})
+                if groups:
+                    proxy_info = await Actor.create_proxy_configuration(groups=groups)
+                else:
+                    proxy_info = await Actor.create_proxy_configuration()
+            except TypeError as te:
+                log.warning(f"Proxy groups TypeError {te}, trying without groups")
+                proxy_info = await Actor.create_proxy_configuration()
+            except Exception as e:
+                # If RESIDENTIAL failed (likely not available on FREE), fallback
+                if "RESIDENTIAL" in str(groups):
+                    log.warning(f"RESIDENTIAL proxy not available ({e}), falling back to default Apify Proxy")
+                    proxy_info = await Actor.create_proxy_configuration()
+                else:
+                    raise
             if proxy_info:
                 proxy_url = proxy_info.new_url()
-                log.info(f"Using Apify Proxy (groups={groups}) -> {proxy_url[:30]}...")
+                log.info(f"Using Apify Proxy -> {proxy_url[:50]}... (groups={groups or 'auto'})")
+                # Also log proxy status for Upwork
+                if not proxy_url:
+                    log.warning("Proxy URL empty - Upwork will likely return 401")
             else:
-                log.warning("Proxy config returned None - check Apify Proxy is enabled in Console")
+                log.warning("Proxy config returned None - check Apify Proxy is enabled in Console (FREE plan may need BUYPROXIES group)")
         except Exception as e:
             log.warning(f"Proxy setup failed: {e}", exc_info=True)
+            # Last resort: try to construct proxy URL manually from env if available
+            try:
+                import os as _os2
+                # Apify sets APIFY_PROXY_PASSWORD env on platform
+                pwd = _os2.getenv("APIFY_PROXY_PASSWORD")
+                if pwd:
+                    proxy_url = f"http://auto:{pwd}@proxy.apify.com:8000"
+                    log.info(f"Fallback manual proxy URL constructed -> {proxy_url[:30]}...")
+            except:
+                pass
 
     # Init API
     session_token = inputs.get("sessionToken")
