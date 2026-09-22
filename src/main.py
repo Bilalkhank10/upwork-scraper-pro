@@ -233,26 +233,7 @@ async def main():
     except Exception as e:
         log.warning(f"Actor.get_input failed: {e}")
         inputs = {}
-    # Fallback: if still empty on Apify, try to read INPUT from KV store file (Apify sets APIFY_DEFAULT_KEY_VALUE_STORE_ID)
-    if not inputs and is_on_apify:
-        try:
-            import os as _os2
-            # Apify stores input in key-value store, but Actor.get_input should have read it
-            # Try alternative: read from env-specified file if exists
-            store_id = _os2.getenv("APIFY_DEFAULT_KEY_VALUE_STORE_ID")
-            token = _os2.getenv("APIFY_TOKEN")
-            if store_id and token:
-                import httpx
-                async with httpx.AsyncClient() as _c:
-                    r = await _c.get(f"https://api.apify.com/v2/key-value-stores/{store_id}/records/INPUT?token={token}")
-                    if r.status_code == 200:
-                        inputs = r.json()
-                        log.info(f"Fallback KV INPUT fetched: {list(inputs.keys()) if isinstance(inputs, dict) else type(inputs)}")
-        except Exception as e:
-            log.warning(f"Fallback INPUT fetch failed: {e}")
-    
-    # If no input (local run), use mock - but on Apify use defaults from schema
-    # Robust Apify detection: check env + Actor config
+    # Robust Apify detection: check env + Actor config (define BEFORE fallback use)
     is_on_apify = os.getenv("APIFY_IS_AT_HOME") == "1"
     try:
         if HAS_APIFY:
@@ -264,6 +245,22 @@ async def main():
     if not is_on_apify and HAS_APIFY and os.getenv("APIFY_TOKEN"):
         is_on_apify = True
     log.info(f"ENV check: APIFY_IS_AT_HOME={os.getenv('APIFY_IS_AT_HOME')}, HAS_APIFY={HAS_APIFY}, is_on_apify={is_on_apify}, raw_inputs_keys={list(inputs.keys()) if inputs else 'EMPTY'}")
+
+    # Fallback: if still empty on Apify, try to read INPUT from KV store file (Apify sets APIFY_DEFAULT_KEY_VALUE_STORE_ID)
+    if not inputs and is_on_apify:
+        try:
+            import os as _os2
+            store_id = _os2.getenv("APIFY_DEFAULT_KEY_VALUE_STORE_ID")
+            token = _os2.getenv("APIFY_TOKEN")
+            if store_id and token:
+                import httpx
+                async with httpx.AsyncClient() as _c:
+                    r = await _c.get(f"https://api.apify.com/v2/key-value-stores/{store_id}/records/INPUT?token={token}")
+                    if r.status_code == 200:
+                        inputs = r.json()
+                        log.info(f"Fallback KV INPUT fetched: {list(inputs.keys()) if isinstance(inputs, dict) else type(inputs)}")
+        except Exception as e:
+            log.warning(f"Fallback INPUT fetch failed: {e}")
     if not inputs:
         if is_on_apify:
             log.info("Empty input on Apify - applying schema defaults")
